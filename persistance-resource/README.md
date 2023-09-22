@@ -150,7 +150,7 @@ Notice that the `usedReplicaCount` is set to 1, meaning that one of the nodes is
 
 ### Submit another job
 
-If you available nodes you can submit another job. In this example we will submit a job to train a 1B MPT model. The job spec is in `jobspec-1b.yaml`. Make sure to modify the `args.run_name` parameter.
+If there are still unused nodes you can submit another job. In this example we will submit a job to train a 1B MPT model. The job spec is in `jobspec-1b.yaml`. Make sure to modify the `args.run_name` parameter.
 
 ```
 VERTEX_JOB_NAME="mosaicml-job-$(date +%s)"
