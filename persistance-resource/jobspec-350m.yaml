@@ -14,16 +14,16 @@ workerPoolSpecs:
     args:
     - scripts/train/train.py
     - scripts/train/yamls/pretrain/mpt-350m.yaml
-    - run_name=350m-run-2
+    - run_name=350m-run-3
     - data_local=/mds_cache
     - data_remote=gs://jk-asia-southeast1-staging/c4
     - train_loader.dataset.split=train_small
     - eval_loader.dataset.split=val_small
     - max_duration=20ba
     - eval_interval=10ba
-    - "loggers.tensorboard={log_dir: /gcs/jk-asia-southeast1-staging/mosaicml/350m-run-2/logs}"
-    - save_folder=/gcs/jk-asia-southeast1-staging/mosaicml/350m-run-2/checkpoints
+    - "loggers.tensorboard={log_dir: /gcs/jk-asia-southeast1-staging/mosaicml/350m-run-3/logs}"
+    - save_folder=/gcs/jk-asia-southeast1-staging/mosaicml/350m-run-3/checkpoints
 serviceAccount: vertex-training-sa@jk-mlops-dev.iam.gserviceaccount.com
 baseOutputDirectory:
-  outputUriPrefix: gs://jk-asia-southeast1-staging/mosaicml/350m-run-2
+  outputUriPrefix: gs://jk-asia-southeast1-staging/mosaicml/350m-run-3
 tensorboard: projects/895222332033/locations/asia-southeast1/tensorboards/8558528141864206336
