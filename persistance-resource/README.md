@@ -49,8 +49,6 @@ scripts/data_prep/convert_dataset_hf.py \
 
 ### Test a training run locally
 
-MosaicML composer does not seem to properly use Google Cloud Application Default Credentials. 
-For now we will save a checkpoint locally. When we run the job on a persistent cluster we will use GCSFuse to mitigate.
 
 ```
 RUN_ID="run-$(date +%s)"
