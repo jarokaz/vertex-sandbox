@@ -22,7 +22,7 @@ workerPoolSpecs:
     - max_duration=20ba
     - eval_interval=10ba
     - save_folder=/gcs/jk-asia-southeast1-staging/mosaicml/1b-run-2/checkpoints
-    - "loggers.tensorboard={log_dir: /gcs/jk-asia-southeast1-staging/mosaicml/1b-run-2/logs}}"
+    - "loggers.tensorboard={log_dir: /gcs/jk-asia-southeast1-staging/mosaicml/1b-run-2/logs}"
 serviceAccount: vertex-training-sa@jk-mlops-dev.iam.gserviceaccount.com
 baseOutputDirectory:
   outputUriPrefix: gs://jk-asia-southeast1-staging/mosaicml/1b-run-2
