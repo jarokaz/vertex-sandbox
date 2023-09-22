@@ -3,7 +3,7 @@
 
 This sample demonstrates how run **MosaicML LLM Foundry** workloads on a Vertex AI [persitent resource](https://cloud.google.com/vertex-ai/docs/training/persistent-resource-overview). You will run jobs that pretrain MosaicML MPT models on C4 dataset.
 
-## Developing and testing a custom training container 
+## Developing and testing a custom training container image 
 
 In this sample we are going to use a custom training container image that packages **MosaicLM LLM Foundry**.
 
@@ -32,7 +32,7 @@ We will use the `convert_dataset_hf.py` script to convert the HF c4 dataset to t
 
 ##### Create a GCS bucket
 
-Create a GCS bucket in the same region where your persistant cluster will run.
+Create a GCS bucket in the same region where your persistant cluster will be provisioned.
 
 ```
 export REGION=asia-southeast1
@@ -43,6 +43,7 @@ gsutil mb -l $REGION $BUCKET_NAME
 
 ##### Run the conversion script
 
+```
 export C4_GCS_LOCATION=$BUCKET_NAME/c4
 
 docker run -it --gpus all --rm \
@@ -51,6 +52,7 @@ scripts/data_prep/convert_dataset_hf.py \
 --dataset c4 --data_subset en \
 --out_root $C4_GCS_LOCATION --splits train_small val_small \
 --concat_tokens 2048 --tokenizer EleutherAI/gpt-neox-20b --eos_text '<|endoftext|>'
+```
 
 ### Test the training script
 
