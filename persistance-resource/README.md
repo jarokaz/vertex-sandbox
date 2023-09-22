@@ -158,8 +158,8 @@ We will first run a job to train a 350M MPT model. The job specification is defi
 The file needs to be edited before each job is submitted:
 - `containerSpec.args.run_name` - needs to be set to a unique run name for each job. This field is used to designate a name of a GCS subfolder where the artifacts created by a job will be stored
 - `baseOutputDirectory.outputUriPrefix` - points to a GCS path where Vertex will assume artifacts created by a job are stored. For example Vertex will try to upload Tensorboard logs from the `logs` folder in this location. The last part of this path should be the same as a value of `containerSpec.args.run_name`
-- `loggers.tensorboard` - defines a location where MosaicML will save logs. The `log_dir` key must be set to `<baseOutputDirectory.outputUriPrefix>/logs`.
-- `save_folder` defines a GCS path where MosaicML saves checkpoints. This value should be set to `<baseOutputDirectory.outputUriPrefix>/checkpoints` 
+- `loggers.tensorboard` - defines a location where MosaicML will save logs. The `log_dir` key must be set to `<baseOutputDirectory.outputUriPrefix>/logs`. Due to an issue in MosaicML related to default application credentials use the GCSFuse URI format - `/gcs/<bucket name>/...`
+- `save_folder` defines a GCS path where MosaicML saves checkpoints. This value should be set to `<baseOutputDirectory.outputUriPrefix>/checkpoints`. Due to an issue in MosaicML related to default application credentials use the GCSFuse URI format - `/gcs/<bucket name>/...` 
 - `serviceAccount` - set to your service account email
 - `tensorboard` - set to a fully qualified name of your Tensorboard instance
 
