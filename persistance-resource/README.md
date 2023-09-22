@@ -36,6 +36,7 @@ gsutil mb -l $REGION $BUCKET_NAME
 
 #### Run the conversion script
 
+```
 export C4_GCS_LOCATION=$BUCKET_NAME/c4
 
 docker run -it --gpus all --rm \
@@ -44,6 +45,7 @@ scripts/data_prep/convert_dataset_hf.py \
 --dataset c4 --data_subset en \
 --out_root $C4_GCS_LOCATION --splits train_small val_small \
 --concat_tokens 2048 --tokenizer EleutherAI/gpt-neox-20b --eos_text '<|endoftext|>'
+```
 
 ### Test a training run locally
 
