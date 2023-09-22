@@ -106,7 +106,7 @@ gcloud beta ai persistent-resources list --region=$REGION --project=$PROJECT_ID
 
 ### Run a job on a persistent resource
 
-We will first run a job to train a 350M MPT model. The job parameters are in the `jobspec-350m.yaml`. The job is scheduled to run on a single node but to use two GPUs.
+We will first run a training job for a 350M MPT model. The job parameters are in the `jobspec-350m.yaml`. The job is scheduled to run on a single node with two GPUs.
 
 Before running the job adjust the `jobspec-350m.yaml` as required. To avoid overriding checkpoints and Tensorboard logs update the `args.run_name` parameter so each run has a unique ID. The `run_name` parameter will be used to create subfolders where checkpoints and Tensorboard logs are stored.
 
