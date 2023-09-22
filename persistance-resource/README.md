@@ -3,7 +3,7 @@
 
 ## Experimenting locally 
 
-You can prepare and test a docker image that will be used with Vertex AI Training persistence resource on a user instance of Vertex Workbench. Make sure that your instance has the same GPU type as the persistance cluster. If you want to test FSDP locally allocate two GPUs to your instance.
+You can prepare and test a docker image that will be used with Vertex AI Training persistence resource on a user instance of Vertex Workbench. Make sure that your instance has the same GPU type as the persistent cluster. If you want to test FSDP locally allocate two GPUs to your instance.
 
 ### Build MosaicML docker image
 
