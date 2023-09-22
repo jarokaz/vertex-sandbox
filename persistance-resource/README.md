@@ -1,13 +1,13 @@
 
 # Running MosaicML training workloads on Vertex AI Training persistance resources
 
-This sample demonstrates how run MosaicML llm_foundry workloads on a Vertex AI [persitent resource](https://cloud.google.com/vertex-ai/docs/training/persistent-resource-overview). You will run jobs that pretrain MosaicML MPT models on C4 dataset.
+This sample demonstrates how run **MosaicML LLM Foundry** workloads on a Vertex AI [persitent resource](https://cloud.google.com/vertex-ai/docs/training/persistent-resource-overview). You will run jobs that pretrain MosaicML MPT models on C4 dataset.
 
 ## Developing and testing a custom training container 
 
-In this sample we are going to use a custom training container image that packages **MosaicLM llm_foundry**.
+In this sample we are going to use a custom training container image that packages **MosaicLM LLM Foundry**.
 
-Before submitting Vertex Training jobs it is recommended to prepare and test a docker image that will be used with Vertex AI training using a local development environment. For example you could use a user-managed instance of Vertex Workbench. Make sure that your instance has the same GPU type as the nodes in a persistance cluster. 
+Before submitting Vertex Training jobs it is recommended to prepare and test a docker image that will be used with Vertex AI training using a local development environment. For example you could use a user-managed instance of Vertex Workbench. Make sure that your instance has the same GPU type as the nodes in a persistent cluster. 
 
 ### Build MosaicML docker image
 
