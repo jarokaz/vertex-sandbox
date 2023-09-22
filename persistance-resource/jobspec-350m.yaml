@@ -1,0 +1,25 @@
+workerPoolSpecs:
+  machineSpec:
+    machineType: a2-highgpu-2g 
+    acceleratorType: NVIDIA_TESLA_A100
+    acceleratorCount: 2
+  diskSpec:
+    bootDiskSizeGb: 1000
+    bootDiskType: pd-ssd
+  replicaCount: 1
+  containerSpec:
+    imageUri: gcr.io/jk-mlops-dev/mosaicml-sandbox
+    command:
+    - composer
+    args:
+    - scripts/train/train.py
+    - scripts/train/yamls/pretrain/mpt-350m.yaml
+    - run_name=350m-run-2
+    - data_local=/mds_cache
+    - data_remote=gs://jk-asia-southeast1-staging/c4
+    - train_loader.dataset.split=train_small
+    - eval_loader.dataset.split=val_small
+    - max_duration=20ba
+    - eval_interval=10ba
+    - "loggers.tensorboard={log_dir: /gcs/jk-asia-southeast1-staging/mosaicml/tb_logs}"
+    - save_folder=/gcs/jk-asia-southeast1-staging/mosaicml/checkpoints/{run_name}

@@ -8,7 +8,7 @@ FROM mosaicml/llm-foundry:2.0.1_cu118-latest
 # Install and uninstall foundry to cache foundry requirements
 RUN git clone -b main https://github.com/mosaicml/llm-foundry.git && \
     cd llm-foundry && \
-    pip install -e ".[gpu]" 
+    pip install -e ".[gpu,tensorboard]" 
 
 WORKDIR /llm-foundry
 
