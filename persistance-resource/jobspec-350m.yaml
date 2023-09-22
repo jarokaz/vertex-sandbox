@@ -21,5 +21,9 @@ workerPoolSpecs:
     - eval_loader.dataset.split=val_small
     - max_duration=20ba
     - eval_interval=10ba
-    - "loggers.tensorboard={log_dir: /gcs/jk-asia-southeast1-staging/mosaicml/tb_logs}"
-    - save_folder=/gcs/jk-asia-southeast1-staging/mosaicml/checkpoints/{run_name}
+    - "loggers.tensorboard={log_dir: /gcs/jk-asia-southeast1-staging/mosaicml/350m-run-2/logs}"
+    - save_folder=/gcs/jk-asia-southeast1-staging/mosaicml/350m-run-2/checkpoints
+serviceAccount: vertex-training-sa@jk-mlops-dev.iam.gserviceaccount.com
+baseOutputDirectory:
+  outputUriPrefix: gs://jk-asia-southeast1-staging/mosaicml/350m-run-2
+tensorboard: projects/895222332033/locations/asia-southeast1/tensorboards/8558528141864206336

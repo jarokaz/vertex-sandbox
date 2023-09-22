@@ -1,14 +1,17 @@
 
-# Running MosaicML training workloads on Vertex AI Training Persistent Resource
+# Running MosaicML training workloads on Vertex AI Training persistance resources
 
-## Experimenting locally 
+This sample demonstrates how run MosaicML llm_foundry workloads on a Vertex AI [persitent resource](https://cloud.google.com/vertex-ai/docs/training/persistent-resource-overview). You will run jobs that pretrain MosaicML MPT models on C4 dataset.
 
-You can prepare and test a docker image that will be used with Vertex AI Training persistence resource on a user instance of Vertex Workbench. Make sure that your instance has the same GPU type as the persistent cluster. If you want to test FSDP locally allocate two GPUs to your instance.
+## Developing and testing a custom training container 
+
+In this sample we are going to use a custom training container image that packages **MosaicLM llm_foundry**.
+
+Before submitting Vertex Training jobs it is recommended to prepare and test a docker image that will be used with Vertex AI training using a local development environment. For example you could use a user-managed instance of Vertex Workbench. Make sure that your instance has the same GPU type as the nodes in a persistance cluster. 
 
 ### Build MosaicML docker image
 
-Use the same docker image for both local testing and Vertex Training jobs.
-
+You will use the same docker image for both local testing and Vertex Training jobs.
 
 ```
 PROJECT_ID=jk-mlops-dev
@@ -19,11 +22,15 @@ docker push gcr.io/$PROJECT_ID/$IMAGE_NAME
 ```
 
 
-### Convert C4 dataset to StreamingDataset format
+### Prepare training datasets
+
+MosaicML recommends using data in their highly efficient StreamingDataset format.
+
+#### Convert C4 dataset to StreamingDataset format
 
 We will use the `convert_dataset_hf.py` script to convert the HF c4 dataset to the Mosaic StreamingDataset format and push the converted dataset to Google Cloud Storage. 
 
-#### Create a GCS bucket
+##### Create a GCS bucket
 
 Create a GCS bucket in the same region where your persistant cluster will run.
 
@@ -34,9 +41,8 @@ export BUCKET_NAME=gs://jk-asia-southeast1-staging
 gsutil mb -l $REGION $BUCKET_NAME 
 ```
 
-#### Run the conversion script
+##### Run the conversion script
 
-```
 export C4_GCS_LOCATION=$BUCKET_NAME/c4
 
 docker run -it --gpus all --rm \
@@ -45,9 +51,8 @@ scripts/data_prep/convert_dataset_hf.py \
 --dataset c4 --data_subset en \
 --out_root $C4_GCS_LOCATION --splits train_small val_small \
 --concat_tokens 2048 --tokenizer EleutherAI/gpt-neox-20b --eos_text '<|endoftext|>'
-```
 
-### Test a training run locally
+### Test the training script
 
 
 ```
@@ -78,7 +83,7 @@ loggers.tensorboard='{log_dir: /runs/logs}'
 ```
 REGION=asia-southeast1
 PROJECT_ID=jk-mlops-dev
-PERSISTENT_RESOURCE_ID=jk-a100-cluster
+PERSISTENT_RESOURCE_ID=jk-a100-cluster-2
 DISPLAY_NAME=jk-a100-cluster
 MACHINE_TYPE=a2-highgpu-2g
 ACCELERATOR_TYPE=NVIDIA_TESLA_A100
@@ -93,6 +98,7 @@ gcloud beta ai persistent-resources create \
 --display-name=$DISPLAY_NAME \
 --project=$PROJECT_ID \
 --region=$REGION \
+--enable-custom-service-account \
 --resource-pool-spec="replica-count=$REPLICA_COUNT,machine-type=$MACHINE_TYPE,accelerator-type=$ACCELERATOR_TYPE,accelerator-count=$ACCELERATOR_COUNT,disk-type=$BOOT_DISK_TYPE,disk-size=$BOOT_DISK_SIZE_GB"
 
 ```
@@ -104,13 +110,67 @@ gcloud beta ai persistent-resources list --region=$REGION --project=$PROJECT_ID
 ```
 
 
+### Create a Vertex Tensorboard instance
+
+
+```
+TENSORBOARD_NAME=jk-mosaicml-mpt-training
+
+gcloud ai tensorboards create \
+--display-name $TENSORBOARD_NAME \
+--project $PROJECT_ID \
+--region $REGION
+
+```
+
+
+### Create a service account for training jobs
+
+It is highly recommended to run training jobs using a dedicated service account.
+
+```
+TRAINING_SA_NAME=vertex-training-sa
+
+gcloud  iam service-accounts create $TRAINING_SA_NAME --project=$PROJECT_ID
+```
+
+
+### Grant the service account the required roles
+
+```
+SA_EMAIL="$TRAINING_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+   --member="serviceAccount:${SA_EMAIL}" \
+   --role="roles/storage.admin"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+   --member="serviceAccount:${SA_EMAIL}" \
+   --role="roles/aiplatform.user"
+```
+
 ### Run a job on a persistent resource
 
-We will first run a training job for a 350M MPT model. The job parameters are in the `jobspec-350m.yaml`. The job is scheduled to run on a single node with two GPUs.
+#### Configure a job spec.
 
-Before running the job adjust the `jobspec-350m.yaml` as required. To avoid overriding checkpoints and Tensorboard logs update the `args.run_name` parameter so each run has a unique ID. The `run_name` parameter will be used to create subfolders where checkpoints and Tensorboard logs are stored.
+We will first run a job to train a 350M MPT model. The job specification is defined the `jobspec-350m.yaml` file.
 
+The file needs to be edited before each job is submitted:
+- `containerSpec.args.run_name` - needs to be set to a unique run name for each job. This field is used to designate a name of a GCS subfolder where the artifacts created by a job will be stored
+- `baseOutputDirectory.outputUriPrefix` - points to a GCS path where Vertex will assume artifacts created by a job are stored. For example Vertex will try to upload Tensorboard logs from the `logs` folder in this location. The last part of this path should be the same as a value of `containerSpec.args.run_name`
+- `loggers.tensorboard` - defines a location where MosaicML will save logs. The `log_dir` key must be set to `<baseOutputDirectory.outputUriPrefix>/logs`.
+- `save_folder` defines a GCS path where MosaicML saves checkpoints. This value should be set to `<baseOutputDirectory.outputUriPrefix>/checkpoints` 
+- `serviceAccount` - set to your service account email
+- `tensorboard` - set to a fully qualified name of your Tensorboard instance
 
+You can get a fully qualified name of your Tensorboard instance by executing this command.
+
+```
+gcloud ai tensorboards list --project $PROJECT_ID --region $REGION --filter="displayName=$TENSORBOARD_NAME"
+
+```
+
+#### Submit a job
 
 ```
 VERTEX_JOB_NAME="mosaicml-job-$(date +%s)"
@@ -123,7 +183,7 @@ gcloud beta ai custom-jobs create \
 ```
 
 
-### Monitor the status of the job
+#### Monitor the status of the job
 
 You can monitor the status of the job using GCP Console or using the following gcloud command:
 
@@ -132,7 +192,7 @@ gcloud beta ai custom-jobs describe <YOUR JOB ID>
 ```
 
 
-### Inspect the logs
+#### Inspect the logs
 
 You can inspect the logs using GCP Console or stream them using the following gcloud command:
 
@@ -140,7 +200,7 @@ You can inspect the logs using GCP Console or stream them using the following gc
 gcloud beta ai custom-jobs stream-logs <YOUR JOB I\D>
 ```
 
-### Inspect the persistent cluster
+#### Inspect the persistent cluster
 
 ```
 gcloud beta ai persistent-resources describe $PERSISTENT_RESOURCE_ID --region $REGION --project $PROJECT_ID
@@ -150,7 +210,7 @@ Notice that the `usedReplicaCount` is set to 1, meaning that one of the nodes is
 
 ### Submit another job
 
-If there are still unused nodes you can submit another job. In this example we will submit a job to train a 1B MPT model. The job spec is in `jobspec-1b.yaml`. Make sure to modify the `args.run_name` parameter.
+If there are available nodes on your cluster you can submit another job. In this example we will submit a job to train a 1B MPT model. The job spec is in `jobspec-1b.yaml`. Make sure to modify the job spec as described above.
 
 ```
 VERTEX_JOB_NAME="mosaicml-job-$(date +%s)"
@@ -164,67 +224,13 @@ gcloud beta ai custom-jobs create \
 
 ### Inspect the artifacts created by the jobs
 
-As configured in the job spec yaml files both the checkpoints and Tensorboard logs generated by the jobs are stored in the specified GCS locations.
+As configured in the job spec yaml files both the checkpoints and Tensorboard logs generated by the job are stored in the specified GCS locations.
 
 Checkpoints are stored in the `save_model` location.
 Tensorboard logs are stored in the `log_dir` location.
 
 You can inspect these artifacts with the `gsutil` command.
 
-### Analyze Tensorboard logs
-
-You can use Vertex Tensorboard to review and analyze the training logs.
-
-#### Create a Vertex Tensorboard instance
-
-Your Tensorboard instance can be in a different region than your persistent cluster.
-
-
-```
-TENSORBOARD_REGION=us-central1
-TENSORBOARD_NAME=jk-mosaicml-tb-log
-
-gcloud ai tensorboards create \
---display-name $TENSORBOARD_NAME \
---project $PROJECT_ID \
---region $TENSORBOARD_REGION
-
-```
-
-
-#### Upload the logs 
-
-You use the `tb-gcp-uploader` utility to upload the logs to your instance. The utility is included in the `google-cloud-aiplatform` package. To ensure that the utility is available (re)install the package.
-
-```
-pip install -U google-cloud-aiplatform[tensorboard]
-```
-
- Note that you will need  a fully qualified name of your Tensorboard instance to configure `tb-gcp-uploader`. You can get it using the following command. This is a value in the `name:` field.
-
-```
-gcloud ai tensorboards list --project $PROJECT_ID --region $TENSORBOARD_REGION --filter="displayName=$TENSORBOARD_NAME"
-
-```
-
-To differentiate between different log groups in the same Tensorboard instance you upload them to an experiment.  You can upload multiple logs to the same experiment.
-
-To upload the logs execute the following command:
-
-```
-TENSORBOARD_INSTANCE_ID=projects/895222332033/locations/us-central1/tensorboards/8170506090375544832
-LOG_DIR=gs://jk-asia-southeast1-staging/mosaicml/tb_logs/350m-run-2
-EXPERIMENT_NAME=mpt-runs
-
-tb-gcp-uploader  \
---tensorboard_resource_name $TENSORBOARD_INSTANCE_ID \
---logdir=$LOG_DIR \
---experiment_name=$EXPERIMENT_NAME \
---one_shot 
-
-```
-
-After uploading you can analyze the results in Vertex AI Tensorboar UI.
 
 
 ### Delete a persistent resource
